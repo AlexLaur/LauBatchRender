@@ -11,6 +11,13 @@ class LauBatchRender(object):
         self.nukeFromFrame = nuke.Root().firstFrame()
         self.nukeToFrame = nuke.Root().lastFrame()
 
+        optionsFrameRange = ('Project', 'Custom')
+
+        for i in nuke.allNodes("Viewer"):
+            print type(optionsFrameRange)
+            optionsFrameRange += (i['name'].value(),)
+            #print i['frame_range'].value()
+
         try:
             self.filename = self.nukeScriptPath.split('/')[- 1].split('.')[- 2]
         except:
@@ -20,6 +27,11 @@ class LauBatchRender(object):
         self.lbrPanel = nuke.Panel("LauBatchRender | laurette.alexandre.free.fr")
 
         self.lbrPanel.addSingleLineInput("Batch's name:", self.filename)
+
+        
+        optionsFrameRange = ','.join(optionsFrameRange)
+        Opts = optionsFrameRange.replace(',',' ')
+        self.lbrPanel.addEnumerationPulldown('Frame Range :', Opts)
 
         self.lbrPanel.addSingleLineInput("Start Frame :", self.nukeFromFrame)
         self.lbrPanel.addSingleLineInput("End Frame :", self.nukeToFrame)
