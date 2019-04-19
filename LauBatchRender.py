@@ -25,7 +25,7 @@ class LauBatchRender(object):
         self.lbrPanel.addEnumerationPulldown('Set localization policy', policyOpts)
 
         self.lbrPanel.addNotepad('Explications',
-                                 'Par defaut la tache sera affectee a queueRender_NOM.bat. Ce bacth est a utiliser pour lancer plusieurs rendus a la suite en une seule fois.\n\nSi vous entrez un nom pour le fichier bat, cela aura pour effet de creer un fichier .bat avec uniquement la commande pour rendre le plan actuel et seulement lui.')
+                                 'test')
 
         self.lbrPanel.addButton("Cancel")
         self.lbrPanel.addButton("Submit")
