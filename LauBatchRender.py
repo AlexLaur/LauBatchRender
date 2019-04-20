@@ -55,6 +55,9 @@ class LauBatchRender(object):
             nuke.tprint("GO")
             nuke.tprint(self.lbrPanel.value("Select the method"))
             self.checkInputUser()
+            self.whichBatchMethod()
+            self.checkBatchFileExist()
+            self.clearBatchFile()
 
             return None
         else:
@@ -65,5 +68,36 @@ class LauBatchRender(object):
     def checkInputUser(self):
         nuke.tprint("check input users")
 
+    def clearBatchFile(self):
+        nuke.tprint("clear file")
+        
+        if self.lbrPanel.value("Clear Queue") is True:
+            nuke.tprint("Clear Queue now !")
+        if self.lbrPanel.value("Clear Parallel") is True:
+            nuke.tprint("Clear Parallel now !")
+
+    def checkBatchFileExist(self):
+        nuke.tprint('check batch exist')
+
+    def whichBatchMethod(self):
+        method = self.lbrPanel.value("Select the method")
+
+        if method == "Single":
+            print "single"
+        elif method == "Queue":
+            print "Queue"
+        elif method == "Parallel":
+            print "Parallel"
+        else:
+            print "error"
+
+    def addToQueue(self):
+        print "1"
+
+    def addToSingle(self):
+        print "2"
+
+    def addToParrallel(self):
+        print "3"
 
 lbr = LauBatchRender()
