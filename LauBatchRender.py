@@ -119,6 +119,10 @@ class LauBatchRender(LauBatchRenderUI):
         self.validation_button.clicked.connect(self.runApp)
         self.cancel_button.clicked.connect(self.closeApp)
 
+        # Check if batfile exist, if not, we create them
+        self.checkBatchFile("Queue.bat")
+        self.checkBatchFile("Parallel.bat")
+
     # Function to update frame range input thanks to the selection frame range
     def updateFrameRange(self):
         selection_frame_range = self.frame_range_selection.itemData(self.frame_range_selection.currentIndex())
@@ -128,10 +132,6 @@ class LauBatchRender(LauBatchRenderUI):
 
     # Run the app
     def runApp(self):
-
-        # Check if batfile exist, if not, we create them
-        self.checkBatchFile("Queue.bat")
-        self.checkBatchFile("Parallel.bat")
 
         # If current selection is "Single", create the bat file with the custom name
         if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
@@ -151,7 +151,7 @@ class LauBatchRender(LauBatchRenderUI):
 
     # Create the base for batch file
     def createBatchFile(self, filename):
-        with open(filename, 'wb') as f:
+        with open(filename, 'w') as f:
             # Write header into the file
             f.write("@echo off\n")
             f.write("title LauBatchRender\n\n")
@@ -177,7 +177,7 @@ class LauBatchRender(LauBatchRenderUI):
 
     # Create a copy of the current script
     def copyNukeFile(self):
-        self.nuke_script_for_render = NUKE_SCRIPT_PATH + str(uuid.uuid1()) + "_" + self.filename
+        self.nuke_script_for_render = NUKE_SCRIPT_PATH + str(uuid.uuid1()) + "_" + self.filename +".nk"
         shutil.copyfile(self.nuke_script_path, self.nuke_script_for_render)
 
 
