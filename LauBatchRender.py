@@ -6,16 +6,20 @@ except:
     from PySide2.QtCore import *
     from PySide2.QtWidgets import *
 
-import os, shutil, sys
+import os, shutil, sys, uuid
 import nuke
 
-NUKE_SCRIPT_PATH = "O:/14_NUKE_RENDER_TEMP/"
+# GLOBAL VARIABLES
+
+NUKE_SCRIPT_PATH = "D:/LAUBATCHRENDER/SCRIPTS/"
 
 BATCH_PATH = "D:/LAUBATCHRENDER/"
 
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
+################################################################################
+###       DO NOT EDIT BELOW (unless you really know what you are doing)      ###
+################################################################################
 
-
+# UI
 class LauBatchRenderUI(QWidget):
     def __init__(self):
         super(LauBatchRenderUI, self).__init__()
@@ -83,6 +87,7 @@ class LauBatchRenderUI(QWidget):
 
         self.setLayout(master_layout)
 
+
 class LauBatchRender(LauBatchRenderUI):
     def __init__(self):
         super(LauBatchRender, self).__init__()
@@ -95,8 +100,8 @@ class LauBatchRender(LauBatchRenderUI):
         self.nuke_executable_path = nuke.env["ExecutablePath"]
 
         # Init framerange choice
-        self.frame_range_selection.addItem("Project", str(self.nuke_from_frame)+"-"+str(self.nuke_to_frame))
-        self.frame_range_selection.addItem("Custom", str(self.nuke_from_frame)+"-"+str(self.nuke_to_frame))
+        self.frame_range_selection.addItem("Project", str(self.nuke_from_frame) + "-" + str(self.nuke_to_frame))
+        self.frame_range_selection.addItem("Custom", str(self.nuke_from_frame) + "-" + str(self.nuke_to_frame))
 
         # Get all viewer nodes
         for i in nuke.allNodes("Viewer"):
@@ -108,7 +113,7 @@ class LauBatchRender(LauBatchRenderUI):
         # Init default frame range
         self.start_frame_input.setText(str(self.nuke_from_frame))
         self.end_frame_input.setText(str(self.nuke_to_frame))
-        
+
         # Signals
         self.frame_range_selection.currentIndexChanged.connect(self.updateFrameRange)
         self.validation_button.clicked.connect(self.runApp)
@@ -121,32 +126,59 @@ class LauBatchRender(LauBatchRenderUI):
         self.start_frame_input.setText(selection_frame_range[0])
         self.end_frame_input.setText(selection_frame_range[1])
 
+    # Run the app
     def runApp(self):
-        print "run"
+
+        # Check if batfile exist, if not, we create them
         self.checkBatchFile("Queue.bat")
         self.checkBatchFile("Parallel.bat")
 
+        # If current selection is "Single", create the bat file with the custom name
         if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
-            self.createBatchFile(self.batch_name_input.text()+".bat")
+            self.createBatchFile(BATCH_PATH + str(self.batch_name_input.text()) + ".bat")
 
+        # Duplicate the script nuke for render
+        self.copyNukeFile()
+
+    # Thanks you, bye.
     def closeApp(self):
         self.close()
 
+    # Check if the batch file (Queue or Parallel) exist, if not, we create !
     def checkBatchFile(self, filename):
-        print filename
-        if not os.path.isfile(BATCH_PATH+filename):
-            self.createBatchFile(BATCH_PATH+filename)
+        if not os.path.isfile(BATCH_PATH + filename):
+            self.createBatchFile(BATCH_PATH + filename)
 
+    # Create the base for batch file
     def createBatchFile(self, filename):
         with open(filename, 'wb') as f:
-            f.write('#LauBatchRender')
+            # Write header into the file
+            f.write("@echo off\n")
+            f.write("title LauBatchRender\n\n")
 
-    def writeBatchFile(self, filename, content):
+    # Write the content of the file
+    def writeBatchFile(self, filename):
         print "test"
 
+    # Create the core content of the batch file depend of the selection
     def coreBatchFile(self):
-        print "core"
+        if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
+            print "single"
+        elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Queue":
+            print "queue"
+        elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Parallel":
+            print "parallel"
+        else:
+            print "something is wrong !"
 
+
+        print "core"
+        self.content = "tt"
+
+    # Create a copy of the current script
+    def copyNukeFile(self):
+        self.nuke_script_for_render = NUKE_SCRIPT_PATH + str(uuid.uuid1()) + "_" + self.filename
+        shutil.copyfile(self.nuke_script_path, self.nuke_script_for_render)
 
 
 def start():
@@ -159,6 +191,9 @@ def start():
 
     start.lbr = LauBatchRender()
     start.lbr.show()
+
+
+start()
 
 # app = QApplication(sys.argv)
 # lbr = LauBatchRender()
