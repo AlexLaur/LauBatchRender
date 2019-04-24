@@ -133,12 +133,14 @@ class LauBatchRender(LauBatchRenderUI):
     # Run the app
     def runApp(self):
 
+        # Duplicate the script nuke for render
+        self.copyNukeFile()
+
         # If current selection is "Single", create the bat file with the custom name
         if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
             self.createBatchFile(BATCH_PATH + str(self.batch_name_input.text()) + ".bat")
-
-        # Duplicate the script nuke for render
-        self.copyNukeFile()
+            self.coreBatchFile()
+            self.writeBatchFile(BATCH_PATH + str(self.batch_name_input.text()) + ".bat")
 
     # Thanks you, bye.
     def closeApp(self):
@@ -158,22 +160,27 @@ class LauBatchRender(LauBatchRenderUI):
 
     # Write the content of the file
     def writeBatchFile(self, filename):
-        print "test"
+        with open(filename, 'a') as f:
+            # Write header into the file
+            f.write(self.content)
 
     # Create the core content of the batch file depend of the selection
     def coreBatchFile(self):
+        print "core"
+        self.content = ""
         if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
             print "single"
+
+            self.content = self.content + '"%s" -x -F %s-%s "%s" \n\npause' % (self.nuke_executable_path, self.start_frame_input.text(), self.end_frame_input.text(), self.nuke_script_for_render)
+
+            print self.content
+
         elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Queue":
             print "queue"
         elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Parallel":
             print "parallel"
         else:
             print "something is wrong !"
-
-
-        print "core"
-        self.content = "tt"
 
     # Create a copy of the current script
     def copyNukeFile(self):
