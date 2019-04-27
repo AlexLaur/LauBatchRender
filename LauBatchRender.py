@@ -92,6 +92,8 @@ class LauBatchRender(LauBatchRenderUI):
     def __init__(self):
         super(LauBatchRender, self).__init__()
 
+        self.content = []
+
         # Init values
         self.nuke_script_path = nuke.Root().name()
         self.filename = self.nuke_script_path.split('/')[- 1].split('.')[- 2]
@@ -133,12 +135,28 @@ class LauBatchRender(LauBatchRenderUI):
     # Run the app
     def runApp(self):
 
+        # Duplicate the script nuke for render
+        self.copyNukeFile()
+
         # If current selection is "Single", create the bat file with the custom name
         if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
             self.createBatchFile(BATCH_PATH + str(self.batch_name_input.text()) + ".bat")
+            self.coreBatchFile()
+            self.writeBatchFile(BATCH_PATH + str(self.batch_name_input.text()) + ".bat")
 
-        # Duplicate the script nuke for render
-        self.copyNukeFile()
+        elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Queue":
+            self.getCoreBatchFile(BATCH_PATH + "Queue.bat")
+            self.coreBatchFile()
+            self.writeBatchFile(BATCH_PATH + "Queue.bat")
+
+        elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Parallel":
+            self.getCoreBatchFile(BATCH_PATH + "Parallel.bat")
+            self.coreBatchFile()
+            self.writeBatchFile(BATCH_PATH + "Parallel.bat")
+
+
+        # Done ! We close the window and we say Bye Bye <3
+        self.close()
 
     # Thanks you, bye.
     def closeApp(self):
@@ -156,29 +174,55 @@ class LauBatchRender(LauBatchRenderUI):
             f.write("@echo off\n")
             f.write("title LauBatchRender\n\n")
 
+            if filename == BATCH_PATH+"Parallel.bat":
+                content = 'path="%s/"\n\n\n' % (os.path.dirname(self.nuke_executable_path))
+                f.write(content)
+
     # Write the content of the file
     def writeBatchFile(self, filename):
-        print "test"
+        with open(filename, 'w') as f:
+            for i in self.content:
+                # Write header into the file
+                f.write(i)
 
     # Create the core content of the batch file depend of the selection
     def coreBatchFile(self):
+        print "core"
         if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
             print "single"
+
+            self.content.append('"%s" -x -F %s-%s "%s" \n\npause' % (self.nuke_executable_path, self.start_frame_input.text(), self.end_frame_input.text(), self.nuke_script_for_render))
+
         elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Queue":
             print "queue"
+
+            self.content.append('"%s" -x -F %s-%s "%s" \n\npause' % (self.nuke_executable_path, self.start_frame_input.text(), self.end_frame_input.text(), self.nuke_script_for_render))
+
         elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Parallel":
             print "parallel"
+
+            program = os.path.basename(self.nuke_executable_path)
+            self.content.append('start %s -x -F %s-%s "%s" \n\npause' % (program, self.start_frame_input.text(), self.end_frame_input.text(), self.nuke_script_for_render))
+
         else:
             print "something is wrong !"
 
 
-        print "core"
-        self.content = "tt"
+    # Get the original content of batch file (only for Queue and Parallel
+    def getCoreBatchFile(self, filename):
+        print "get content"
+        with open(filename, 'r') as f:
+            # get the content
+            self.content = f.readlines()
+            self.content.pop()
 
     # Create a copy of the current script
     def copyNukeFile(self):
         self.nuke_script_for_render = NUKE_SCRIPT_PATH + str(uuid.uuid1()) + "_" + self.filename +".nk"
         shutil.copyfile(self.nuke_script_path, self.nuke_script_for_render)
+
+
+
 
 
 def start():
