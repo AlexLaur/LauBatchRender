@@ -1,6 +1,17 @@
+# LauBatchRender - Simple way to create .bat for render !
+# 2019 Laurette Alexandre - laurette.alexandre.free.fr
+# April 2019
+#
+# Features:
+# - Possibility to choose 3 type for render (Simple, Queue, Parallel)
+# - Create a copy of the current script nuke
+# - Before the lauchn of the app, check if folder BATCH_PATH and NUKE_SCRIPT_PATH exists. If not, Ask you if you want ti create them.
+
+# If python version < 3 :
 try:
     from PySide.QtGui import *
     from PySide.QtCore import *
+# else imports Pyside for python 3
 except:
     from PySide2.QtGui import *
     from PySide2.QtCore import *
@@ -9,8 +20,11 @@ except:
 import os, shutil, sys, uuid
 import nuke
 
-# GLOBAL VARIABLES
+# GLOBAL VARIABLES (You may change theses values)
+
+# Folder for .bat files
 BATCH_PATH = "D:/LAUBATCHRENDER/"
+# Folder for the copy of scripts nuke.
 NUKE_SCRIPT_PATH = "D:/LAUBATCHRENDER/SCRIPTS/"
 
 ################################################################################
@@ -207,7 +221,6 @@ class LauBatchRender(LauBatchRenderUI):
 
     # Create the core content of the batch file depend of the selection
     def coreBatchFile(self):
-        print "core"
         if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
             self.content.append('"%s" -x -F %s-%s "%s" \n\npause' % (self.nuke_executable_path, self.start_frame_input.text(), self.end_frame_input.text(), self.nuke_script_for_render))
 
@@ -222,7 +235,6 @@ class LauBatchRender(LauBatchRenderUI):
 
     # Get the original content of batch file (only for Queue and Parallel
     def getCoreBatchFile(self, filename):
-        print "get content"
         with open(filename, 'r') as f:
             # get the content
             self.content = f.readlines()
