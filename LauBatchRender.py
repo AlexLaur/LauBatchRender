@@ -10,10 +10,8 @@ import os, shutil, sys, uuid
 import nuke
 
 # GLOBAL VARIABLES
-
-NUKE_SCRIPT_PATH = "D:/LAUBATCHRENDER/SCRIPTS/"
-
 BATCH_PATH = "D:/LAUBATCHRENDER/"
+NUKE_SCRIPT_PATH = "D:/LAUBATCHRENDER/SCRIPTS/"
 
 ################################################################################
 ###       DO NOT EDIT BELOW (unless you really know what you are doing)      ###
@@ -25,7 +23,7 @@ class LauBatchRenderUI(QWidget):
         super(LauBatchRenderUI, self).__init__()
 
         self.setWindowTitle("LauBatchRender | laurette.alexandre.free.fr")
-        self.resize(250, 300)
+        self.resize(250, 230)
 
         batch_name_label = QLabel("Batch's name :")
         self.batch_name_input = QLineEdit()
@@ -48,9 +46,11 @@ class LauBatchRenderUI(QWidget):
 
         clear_queue_label = QLabel("Clear Queue :")
         self.clear_queue_check = QCheckBox()
+        self.clear_queue_check.setToolTip("Reset the content of Queue.bat")
 
         clear_parallel_label = QLabel("Clear Parallel :")
         self.clear_parallel_check = QCheckBox()
+        self.clear_parallel_check.setToolTip("Reset the content of Parallel.bat")
 
         self.validation_button = QPushButton("Ok")
         self.cancel_button = QPushButton("Cancel")
@@ -61,8 +61,14 @@ class LauBatchRenderUI(QWidget):
         left_layout.addWidget(start_frame_label)
         left_layout.addWidget(end_frame_label)
         left_layout.addWidget(method_selection_label)
-        # left_layout.addWidget(clear_queue_label)
-        # left_layout.addWidget(clear_parallel_label)
+
+        clear_queue_layout = QHBoxLayout()
+        clear_queue_layout.addWidget(clear_queue_label)
+        clear_queue_layout.addWidget(self.clear_queue_check)
+
+        clear_parallel_layout = QHBoxLayout()
+        clear_parallel_layout.addWidget(clear_parallel_label)
+        clear_parallel_layout.addWidget(self.clear_parallel_check)
 
         right_layout = QVBoxLayout()
         right_layout.addWidget(self.batch_name_input)
@@ -70,8 +76,6 @@ class LauBatchRenderUI(QWidget):
         right_layout.addWidget(self.start_frame_input)
         right_layout.addWidget(self.end_frame_input)
         right_layout.addWidget(self.method_selection)
-        # right_layout.addWidget(self.clear_queue_check)
-        # right_layout.addWidget(self.clear_parallel_check)
 
         config_layout = QHBoxLayout()
         config_layout.addLayout(left_layout)
@@ -83,6 +87,8 @@ class LauBatchRenderUI(QWidget):
 
         master_layout = QVBoxLayout()
         master_layout.addLayout(config_layout)
+        master_layout.addLayout(clear_queue_layout)
+        master_layout.addLayout(clear_parallel_layout)
         master_layout.addLayout(action_layout)
 
         self.setLayout(master_layout)
@@ -138,6 +144,15 @@ class LauBatchRender(LauBatchRenderUI):
         # Duplicate the script nuke for render
         self.copyNukeFile()
 
+        # Check if we want to clear the Queue.bat
+        if self.clear_queue_check.isChecked():
+            self.createBatchFile(BATCH_PATH + "Queue.bat")
+
+        # Check if we want to clear the Parallel.bat
+        elif self.clear_parallel_check.isChecked():
+            self.createBatchFile(BATCH_PATH + "Parallel.bat")
+
+
         # If current selection is "Single", create the bat file with the custom name
         if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
             self.createBatchFile(BATCH_PATH + str(self.batch_name_input.text()) + ".bat")
@@ -168,21 +183,27 @@ class LauBatchRender(LauBatchRenderUI):
 
     # Create the base for batch file
     def createBatchFile(self, filename):
-        with open(filename, 'w') as f:
-            # Write header into the file
-            f.write("@echo off\n")
-            f.write("title LauBatchRender\n\n")
+        try:
+            with open(filename, 'w') as f:
+                # Write header into the file
+                f.write("@echo off\n")
+                f.write("title LauBatchRender\n\n")
 
-            if filename == BATCH_PATH+"Parallel.bat":
-                content = 'path="%s/"\n\n' % (os.path.dirname(self.nuke_executable_path))
-                f.write(content)
+                if filename == BATCH_PATH+"Parallel.bat":
+                    content = 'path="%s/"\n\n' % (os.path.dirname(self.nuke_executable_path))
+                    f.write(content)
+        except IOError:
+            nuke.message("Unable to create %s" % filename)
 
     # Write the content of the file
     def writeBatchFile(self, filename):
-        with open(filename, 'w') as f:
-            for i in self.content:
-                # Write the content of the file
-                f.write(i)
+        try:
+            with open(filename, 'w') as f:
+                for i in self.content:
+                    # Write the content of the file
+                    f.write(i)
+        except IOError:
+            nuke.message("Unable to write the file : %s !" % (filename))
 
     # Create the core content of the batch file depend of the selection
     def coreBatchFile(self):
@@ -210,23 +231,39 @@ class LauBatchRender(LauBatchRenderUI):
     # Create a copy of the current script
     def copyNukeFile(self):
         self.nuke_script_for_render = NUKE_SCRIPT_PATH + str(uuid.uuid1()) + "_" + self.filename +".nk"
-        shutil.copyfile(self.nuke_script_path, self.nuke_script_for_render)
+        try:
+            shutil.copyfile(self.nuke_script_path, self.nuke_script_for_render)
+        except IOError:
+            nuke.message("Unable to create the file : %s ! The batch will not work ! Make shure you have theses following folders : %s and %s" % (self.nuke_script_for_render, BATCH_PATH, NUKE_SCRIPT_PATH))
 
 def start():
     nuke_script_path = nuke.Root().name()
+
     try:
         filename = nuke_script_path.split('/')[- 1].split('.')[- 2]
     except:
         nuke.message("This script hasn't been saved yet. Press OK to cancel.")
         return None
 
+    if not os.path.exists(BATCH_PATH):
+        if nuke.ask("%s doesn't exist ! Do you want create this ?" % BATCH_PATH) is True:
+            try:
+                os.mkdir(BATCH_PATH)
+            except:
+                nuke.message("Impossible to create %s, create mannualy or check the right.")
+                return None
+        else:
+            return None
+    if not os.path.exists(NUKE_SCRIPT_PATH):
+        if nuke.ask("%s doesn't exist ! Do you want create this ?" % NUKE_SCRIPT_PATH) is True:
+            try:
+                os.mkdir(NUKE_SCRIPT_PATH)
+            except:
+                nuke.message("Impossible to create %s, create mannualy or check the right.")
+                return None
+        else:
+            return None
+
+    # Start the app if all is good
     start.lbr = LauBatchRender()
     start.lbr.show()
-
-
-start()
-
-# app = QApplication(sys.argv)
-# lbr = LauBatchRender()
-# lbr.show()
-# app.exec_()
