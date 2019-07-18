@@ -3,9 +3,16 @@
 # April 2019
 #
 # Features:
-# - Possibility to choose 3 type for render (Simple, Queue, Parallel)
+# - Possibility to choose 3 type for render (Simple, Cue, Parallel)
 # - Create a copy of the current script nuke
 # - Before the lauchn of the app, check if folder BATCH_PATH and NUKE_SCRIPT_PATH exists. If not, Ask you if you want ti create them.
+
+# To install this script, copy the LauBatchRender to your .nuke folder and put theses lines to your menu.py:
+# import LauBatchRender
+# # # toolbar.addCommand("LauBatchRender","LauBatchRender.start()", "^b", icon="WriteGeo.png")
+
+################################################################################
+
 
 # If python version < 3 :
 try:
@@ -54,13 +61,14 @@ class LauBatchRenderUI(QWidget):
 
         method_selection_label = QLabel("Method :")
         self.method_selection = QComboBox()
+        self.method_selection.setToolTip("Single : one .bat for one render\nCue : one .bat for multiple render. Rendering will be done one after the other.\nParallel : one .bat for multiple render. All rendering will be launch in the same time.")
         self.method_selection.addItem("Single", "Single")
-        self.method_selection.addItem("Queue", "Queue")
+        self.method_selection.addItem("Cue", "Cue")
         self.method_selection.addItem("Parallel", "Parallel")
 
-        clear_queue_label = QLabel("Clear Queue :")
-        self.clear_queue_check = QCheckBox()
-        self.clear_queue_check.setToolTip("Reset the content of Queue.bat")
+        clear_cue_label = QLabel("Clear cue :")
+        self.clear_cue_check = QCheckBox()
+        self.clear_cue_check.setToolTip("Reset the content of cue.bat")
 
         clear_parallel_label = QLabel("Clear Parallel :")
         self.clear_parallel_check = QCheckBox()
@@ -76,9 +84,9 @@ class LauBatchRenderUI(QWidget):
         left_layout.addWidget(end_frame_label)
         left_layout.addWidget(method_selection_label)
 
-        clear_queue_layout = QHBoxLayout()
-        clear_queue_layout.addWidget(clear_queue_label)
-        clear_queue_layout.addWidget(self.clear_queue_check)
+        clear_cue_layout = QHBoxLayout()
+        clear_cue_layout.addWidget(clear_cue_label)
+        clear_cue_layout.addWidget(self.clear_cue_check)
 
         clear_parallel_layout = QHBoxLayout()
         clear_parallel_layout.addWidget(clear_parallel_label)
@@ -101,7 +109,7 @@ class LauBatchRenderUI(QWidget):
 
         master_layout = QVBoxLayout()
         master_layout.addLayout(config_layout)
-        master_layout.addLayout(clear_queue_layout)
+        master_layout.addLayout(clear_cue_layout)
         master_layout.addLayout(clear_parallel_layout)
         master_layout.addLayout(action_layout)
 
@@ -142,7 +150,7 @@ class LauBatchRender(LauBatchRenderUI):
         self.cancel_button.clicked.connect(self.closeApp)
 
         # Check if batfile exist, if not, we create them
-        self.checkBatchFile("Queue.bat")
+        self.checkBatchFile("Cue.bat")
         self.checkBatchFile("Parallel.bat")
 
     # Function to update frame range input thanks to the selection frame range
@@ -158,9 +166,9 @@ class LauBatchRender(LauBatchRenderUI):
         # Duplicate the script nuke for render
         self.copyNukeFile()
 
-        # Check if we want to clear the Queue.bat
-        if self.clear_queue_check.isChecked():
-            self.createBatchFile(BATCH_PATH + "Queue.bat")
+        # Check if we want to clear the cue.bat
+        if self.clear_cue_check.isChecked():
+            self.createBatchFile(BATCH_PATH + "Cue.bat")
 
         # Check if we want to clear the Parallel.bat
         elif self.clear_parallel_check.isChecked():
@@ -173,10 +181,10 @@ class LauBatchRender(LauBatchRenderUI):
             self.coreBatchFile()
             self.writeBatchFile(BATCH_PATH + str(self.batch_name_input.text()) + ".bat")
 
-        elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Queue":
-            self.getCoreBatchFile(BATCH_PATH + "Queue.bat")
+        elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Cue":
+            self.getCoreBatchFile(BATCH_PATH + "Cue.bat")
             self.coreBatchFile()
-            self.writeBatchFile(BATCH_PATH + "Queue.bat")
+            self.writeBatchFile(BATCH_PATH + "Cue.bat")
 
         elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Parallel":
             self.getCoreBatchFile(BATCH_PATH + "Parallel.bat")
@@ -190,7 +198,7 @@ class LauBatchRender(LauBatchRenderUI):
     def closeApp(self):
         self.close()
 
-    # Check if the batch file (Queue or Parallel) exist, if not, we create !
+    # Check if the batch file (cue or Parallel) exist, if not, we create !
     def checkBatchFile(self, filename):
         if not os.path.isfile(BATCH_PATH + filename):
             self.createBatchFile(BATCH_PATH + filename)
@@ -204,7 +212,7 @@ class LauBatchRender(LauBatchRenderUI):
                 f.write("title LauBatchRender\n\n")
 
                 if filename == BATCH_PATH+"Parallel.bat":
-                    content = 'path="%s/"\n\n' % (os.path.dirname(self.nuke_executable_path))
+                    content = 'path="%s/"\n\n\n' % (os.path.dirname(self.nuke_executable_path))
                     f.write(content)
         except IOError:
             nuke.message("Unable to create %s" % filename)
@@ -224,16 +232,18 @@ class LauBatchRender(LauBatchRenderUI):
         if self.method_selection.itemText(self.method_selection.currentIndex()) == "Single":
             self.content.append('"%s" -x -F %s-%s "%s" \n\npause' % (self.nuke_executable_path, self.start_frame_input.text(), self.end_frame_input.text(), self.nuke_script_for_render))
 
-        elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Queue":
+        elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Cue":
+            self.content.append("rem ============================\nrem SCRIPT FOR RENDER\nrem ============================\n\n")
             self.content.append('"%s" -x -F %s-%s "%s" \n\npause' % (self.nuke_executable_path, self.start_frame_input.text(), self.end_frame_input.text(), self.nuke_script_for_render))
 
         elif self.method_selection.itemText(self.method_selection.currentIndex()) == "Parallel":
+            self.content.append("rem ============================\nrem SCRIPT FOR RENDER\nrem ============================\n\n")
             self.content.append('start %s -x -F %s-%s %s \n\npause' % (os.path.basename(self.nuke_executable_path), self.start_frame_input.text(), self.end_frame_input.text(), self.nuke_script_for_render))
 
         else:
             print "something is wrong !"
 
-    # Get the original content of batch file (only for Queue and Parallel
+    # Get the original content of batch file (only for cue and Parallel
     def getCoreBatchFile(self, filename):
         with open(filename, 'r') as f:
             # get the content
@@ -262,7 +272,7 @@ def start():
             try:
                 os.mkdir(BATCH_PATH)
             except:
-                nuke.message("Impossible to create %s, create mannualy or check the right.")
+                nuke.message("Impossible to create %s, create manually or check the right.")
                 return None
         else:
             return None
@@ -271,7 +281,7 @@ def start():
             try:
                 os.mkdir(NUKE_SCRIPT_PATH)
             except:
-                nuke.message("Impossible to create %s, create mannualy or check the right.")
+                nuke.message("Impossible to create %s, create manually or check the right.")
                 return None
         else:
             return None
