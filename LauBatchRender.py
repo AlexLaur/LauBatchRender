@@ -30,7 +30,7 @@ import nuke
 # GLOBAL VARIABLES (You may change theses values)
 
 # Folder for .bat files
-BATCH_PATH = 'D:/LAUBATCHRENDER/'
+BATCH_PATH = 'D:/LAUBATCHRENDER'
 # Folder for the copy of scripts nuke.
 NUKE_SCRIPT_PATH = 'D:/LAUBATCHRENDER/SCRIPTS/'
 
@@ -46,7 +46,7 @@ class LauBatchRenderUI(QWidget):
         self.setWindowTitle('LauBatchRender | laurette.alexandre.free.fr')
         self.resize(250, 230)
 
-        batch_name_label = QLabel('Batch's name :')
+        batch_name_label = QLabel('Batch\'s name :')
         self.batch_name_input = QLineEdit()
         self.batch_name_input.setToolTip('The name the Batch File (only for Single Method)')
 
@@ -168,28 +168,28 @@ class LauBatchRender(LauBatchRenderUI):
 
         # Check if we want to clear the cue.bat
         if self.clear_cue_check.isChecked():
-            self.createBatchFile(BATCH_PATH + 'Cue.bat')
+            self.createBatchFile(os.path.join(BATCH_PATH, 'Cue.bat'))
 
         # Check if we want to clear the Parallel.bat
         elif self.clear_parallel_check.isChecked():
-            self.createBatchFile(BATCH_PATH + 'Parallel.bat')
+            self.createBatchFile(os.path.join(BATCH_PATH, 'Parallel.bat'))
 
 
         # If current selection is "Single", create the bat file with the custom name
         if self.method_selection.itemText(self.method_selection.currentIndex()) == 'Single':
-            self.createBatchFile(BATCH_PATH + str(self.batch_name_input.text()) + '.bat')
+            self.createBatchFile(os.path.join(BATCH_PATH, '%s.bat' % str(self.batch_name_input.text())))
             self.coreBatchFile()
-            self.writeBatchFile(BATCH_PATH + str(self.batch_name_input.text()) + '.bat')
+            self.writeBatchFile(os.path.join(BATCH_PATH, '%s.bat' % str(self.batch_name_input.text())))
 
         elif self.method_selection.itemText(self.method_selection.currentIndex()) == 'Cue':
-            self.getCoreBatchFile(BATCH_PATH + 'Cue.bat')
+            self.getCoreBatchFile(os.path.join(BATCH_PATH, 'Cue.bat'))
             self.coreBatchFile()
-            self.writeBatchFile(BATCH_PATH + 'Cue.bat')
+            self.writeBatchFile(os.path.join(BATCH_PATH, 'Cue.bat'))
 
         elif self.method_selection.itemText(self.method_selection.currentIndex()) == 'Parallel':
-            self.getCoreBatchFile(BATCH_PATH + 'Parallel.bat')
+            self.getCoreBatchFile(os.path.join(BATCH_PATH, 'Parallel.bat'))
             self.coreBatchFile()
-            self.writeBatchFile(BATCH_PATH + 'Parallel.bat')
+            self.writeBatchFile(os.path.join(BATCH_PATH, 'Parallel.bat'))
 
         # Done ! We close the window and we say Bye Bye <3
         self.closeApp()
@@ -200,8 +200,8 @@ class LauBatchRender(LauBatchRenderUI):
 
     # Check if the batch file (cue or Parallel) exist, if not, we create !
     def checkBatchFile(self, filename):
-        if not os.path.isfile(BATCH_PATH + filename):
-            self.createBatchFile(BATCH_PATH + filename)
+        if not os.path.isfile(os.path.join(BATCH_PATH, filename)):
+            self.createBatchFile(os.path.join(BATCH_PATH, filename))
 
     # Create the base for batch file
     def createBatchFile(self, filename):
@@ -211,7 +211,7 @@ class LauBatchRender(LauBatchRenderUI):
                 f.write('@echo off\n')
                 f.write('title LauBatchRender\n\n')
 
-                if filename == BATCH_PATH+'Parallel.bat':
+                if filename == os.path.join(BATCH_PATH, 'Parallel.bat'):
                     content = 'path="%s/"\n\n\n' % (os.path.dirname(self.nuke_executable_path))
                     f.write(content)
         except IOError:
@@ -264,7 +264,7 @@ def start():
     try:
         filename = nuke_script_path.split('/')[- 1].split('.')[- 2]
     except:
-        nuke.message('This script hasn't been saved yet. Press OK to cancel.')
+        nuke.message('This script hasn\'t been saved yet. Press OK to cancel.')
         return None
 
     if not os.path.exists(BATCH_PATH):
